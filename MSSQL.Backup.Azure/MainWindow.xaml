@@ -1,0 +1,70 @@
+﻿<Window x:Class="MSSQL.Backup.Azure.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MSSQL.Backup.Azure"
+        mc:Ignorable="d" ResizeMode="CanMinimize"
+        Title="SQL-Sicherung in die Azure Cloud" Height="240" Width="450">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="20" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition Height="30" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="80" />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+
+        <Label Content="SQL-Server" VerticalAlignment="Center" />
+        <TextBox Grid.Column="1" Margin="5" Text="W9900649" Name="TbServer" />
+        
+        <Label Grid.Row="1" Content="sa-Kennwort" VerticalAlignment="Center" />
+        <Grid Grid.Row="1" Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="70" />
+            </Grid.ColumnDefinitions>
+            <PasswordBox Margin="5" Password="Vivendi2016" Name="PbPassword" />
+            <Button Grid.Column="1" Content="Testen" Margin="5" Click="Button_Click" />
+        </Grid>
+        
+        <Label Content="Datenbank" Grid.Row="2" />
+        <ComboBox Name="CbDataTable" Margin="5" Grid.Row="2" Grid.Column="1" />
+        <Separator Grid.Row="3" Grid.ColumnSpan="3" />
+        
+        <Label Grid.Row="4" Content="Azure-Server" VerticalAlignment="Center" />
+        <Grid Grid.Row="4" Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="135" />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+
+            <TextBox Margin="5 5 0 5" Text="cxdb" TextAlignment="Right" />
+            <Label Grid.Column="1" Content=".blob.core.windows.net/" VerticalAlignment="Center" />
+            <TextBox Grid.Column="2" Margin="0 5 5 5" Text="main" />
+        </Grid>
+        
+        <Label Grid.Row="5" VerticalAlignment="Center" Content="Schlüssel" />
+        <TextBox Grid.Row="5" Grid.Column="1" Margin="5" Text="mCIr5yl4VW7pTCqj3NEoVW+aOyHMmJIzRr/SvjEkdB+QY6sFOoRjnNKOJZUcMdpZ2IGRD1A6k8KgKpULFu1bwQ==" />
+
+        <Grid Grid.Row="6" Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            
+            <Button Margin="5" Width="100" Content="Wiederherstellen" HorizontalAlignment="Left" />
+            <Button Grid.Column="1" Margin="5" Width="100" HorizontalAlignment="Right" Content="Sichern" Click="Button_Click_1" />
+        </Grid>
+
+    </Grid>
+</Window>
