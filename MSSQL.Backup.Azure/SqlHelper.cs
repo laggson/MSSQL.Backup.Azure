@@ -65,15 +65,14 @@ namespace MSSQL.Backup.Azure
       /// Weist den SQL-Server an, ein Backup der eingestellten Datenbank anzufertigen.
       /// </summary>
       /// <returns>Den Pfad, auf dem die Datei abgelegt wurde.</returns>
-      public static string BackupDatabase(string database, bool ueberschreiben = true)
+      public static string CreateBackupAndUpload(string database, bool istLog = false, bool ueberschreiben = true)
       {
          // Dateinamen zusammensetzen
-         string fileName = _ContainerUrl + "/CO_"
-               + DateTimeFormatInfo.CurrentInfo.GetDayName(DateTime.Now.DayOfWeek)
-               + ".bak";
+         string fileName = _ContainerUrl + "/" + GetFileName();
 
-         string command = $"BACKUP DATABASE [{database}] "
-            + $"TO URL='{fileName}' WITH COMPRESSION, "
+         string command = $"BACKUP" 
+            + (istLog ? "LOG" : "DATABASE")
+            + $"[{database}] TO URL='{fileName}' WITH COMPRESSION, "
             + (ueberschreiben ? "FORMAT" : "NOFORMAT");
 
          using (var cmd = new SqlCommand(command))
@@ -88,6 +87,29 @@ namespace MSSQL.Backup.Azure
          }
       }
 
+      /// <summary>
+      /// Erstellt den aktuellen Dateinamen mit Wochentag und ggf. der aktuellen Stunde
+      /// </summary>
+      /// <param name="istLog"></param>
+      /// <returns></returns>
+      public static string GetFileName(bool istLog = false)
+      {
+         string fileName = "CO_"
+                 + DateTimeFormatInfo.CurrentInfo.GetDayName(DateTime.Now.DayOfWeek);
+
+         if (istLog)
+            fileName += "_" + DateTime.Now.Hour.ToString("00");
+            // + DateTime.Now.Minute.ToString("00");
+
+         return fileName + ".bak";
+      }
+
+      /// <summary>
+      /// Erstellt die User-Credentials im SQL-Server, über die das Backup auf den Azure-Speicher geladen wird.
+      /// </summary>
+      /// <param name="accName">Name des Speichers (siehe Subdomain)</param>
+      /// <param name="container">Name des Containers (hinter / in der URL)</param>
+      /// <param name="sasToken">Das im Azure-Portal generierte Shared-Access-Token</param>
       public static void Einrichten(string accName, string container, string sasToken)
       {
          _ContainerUrl = $"https://{accName}.blob.core.windows.net/{container}";

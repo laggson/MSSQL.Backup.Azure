@@ -8,7 +8,24 @@ namespace MSSQL.Backup.Azure
       [STAThread]
       static void Main(string[] args)
       {
-         new Application().Run(new MainWindow());
+         if(args.Length == 1)
+         {
+            var arg = args[0];
+
+            // Entweder Voll- oder Log-Backup. Nie beides.
+            if(arg == "-database")
+            {
+            }
+            else if(arg == "-log")
+            {
+
+            }
+         }
+         else
+         {
+            // Fenster wird nur erstellt, wenn keine oder ungültige Argumente angegeben wurden.
+            new Application().Run(new MainWindow());
+         }
       }
    }
 }
