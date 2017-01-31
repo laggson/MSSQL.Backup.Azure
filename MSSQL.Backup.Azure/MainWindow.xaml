@@ -48,13 +48,13 @@
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
 
-            <TextBox Margin="5 5 0 5" Text="cxdb" TextAlignment="Right" />
+            <TextBox Margin="5 5 0 5" Text="cxdb" TextAlignment="Right" Name="TbAccountName" />
             <Label Grid.Column="1" Content=".blob.core.windows.net/" VerticalAlignment="Center" />
-            <TextBox Grid.Column="2" Margin="0 5 5 5" Text="main" />
+            <TextBox Grid.Column="2" Margin="0 5 5 5" Text="main" Name="TbContainer" />
         </Grid>
         
         <Label Grid.Row="5" VerticalAlignment="Center" Content="Schlüssel" />
-        <TextBox Grid.Row="5" Grid.Column="1" Margin="5" Text="mCIr5yl4VW7pTCqj3NEoVW+aOyHMmJIzRr/SvjEkdB+QY6sFOoRjnNKOJZUcMdpZ2IGRD1A6k8KgKpULFu1bwQ==" />
+        <TextBox Grid.Row="5" Grid.Column="1" Margin="5" Name="TbToken" />
 
         <Grid Grid.Row="6" Grid.Column="1">
             <Grid.ColumnDefinitions>

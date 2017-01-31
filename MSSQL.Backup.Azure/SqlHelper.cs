@@ -9,6 +9,7 @@ namespace MSSQL.Backup.Azure
    public class SqlHelper
    {
       private static string _ConnectionString;
+      private static string _ContainerUrl;
 
       /// <summary>
       /// Fragt alle bestehenden Datenbanken vom SQL-Server ab und gibt diese als <see cref="IEnumerable{string}"/> zurück.
@@ -32,7 +33,7 @@ namespace MSSQL.Backup.Azure
 
                _ConnectionString = connStr;
             }
-            catch(SqlException e)
+            catch (SqlException e)
             {
                if (e.Message.Contains("Verbindung mit SQL Server konnte nicht geöffnet werden"))
                {
@@ -64,21 +65,23 @@ namespace MSSQL.Backup.Azure
       /// Weist den SQL-Server an, ein Backup der eingestellten Datenbank anzufertigen.
       /// </summary>
       /// <returns>Den Pfad, auf dem die Datei abgelegt wurde.</returns>
-      public static string BackupDatabase(string database)
+      public static string BackupDatabase(string database, bool ueberschreiben = true)
       {
-         using (var cmd = new SqlCommand("SELECT * FROM sys.tables")) // TODO: änder mich
-         {
-            cmd.Connection = new SqlConnection(_ConnectionString);
-            cmd.Connection.Open();
-            
-            // Dateinamen zusammensetzen
-            string fileName = @"C:\Temp\SqlBackup\CO_" 
+         // Dateinamen zusammensetzen
+         string fileName = _ContainerUrl + "/CO_"
                + DateTimeFormatInfo.CurrentInfo.GetDayName(DateTime.Now.DayOfWeek)
                + ".bak";
 
-            // Backup erstellen
+         string command = $"BACKUP DATABASE [{database}] "
+            + $"TO URL='{fileName}' WITH COMPRESSION, "
+            + (ueberschreiben ? "FORMAT" : "NOFORMAT");
 
+         using (var cmd = new SqlCommand(command))
+         {
+            cmd.Connection = new SqlConnection(_ConnectionString);
+            cmd.Connection.Open();
 
+            cmd.ExecuteNonQuery();
             cmd.Connection.Close();
 
             return fileName;
@@ -87,15 +90,15 @@ namespace MSSQL.Backup.Azure
 
       public static void Einrichten(string accName, string container, string sasToken)
       {
-         string url = $"https://{accName}.blob.core.windows.net/{container}";
+         _ContainerUrl = $"https://{accName}.blob.core.windows.net/{container}";
 
-         string cmdString = "IF EXISTS"
-            + $"(SELECT * FROM sys.credentials WHERE name = '{url}')"
-            + $"DROP CREDENTIAL [{url}]";
+         string cmdString = "IF EXISTS "
+            + $"(SELECT * FROM sys.credentials WHERE name = '{_ContainerUrl}') "
+            + $"DROP CREDENTIAL [{_ContainerUrl}]";
 
          Execute(cmdString);
 
-         cmdString = $"CREATE CREDENTIAL [{url}]"
+         cmdString = $"CREATE CREDENTIAL [{_ContainerUrl}]"
             + $"WITH IDENTITY='Shared Access Signature',"
             + $"SECRET='{sasToken}'";
 
@@ -121,7 +124,7 @@ namespace MSSQL.Backup.Azure
             cmd.Connection.Close();
          }
 
-            return result;
+         return result;
       }
    }
 }
