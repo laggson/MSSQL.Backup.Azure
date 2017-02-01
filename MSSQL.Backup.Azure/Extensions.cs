@@ -12,6 +12,9 @@ namespace MSSQL.Backup.Azure
       /// <returns>Den konvertierten Text im Base64-Format</returns>
       internal static string ToBase64(this string text)
       {
+         if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
          var bytes = Encoding.UTF8.GetBytes(text);
 
          return Convert.ToBase64String(bytes);
@@ -24,6 +27,9 @@ namespace MSSQL.Backup.Azure
       /// <returns>Den eingegebenen String im Klartext.</returns>
       internal static string FromBase64(this string text64)
       {
+         if (string.IsNullOrEmpty(text64))
+            return string.Empty;
+
          var bytes = Convert.FromBase64String(text64);
 
          return Encoding.UTF8.GetString(bytes);

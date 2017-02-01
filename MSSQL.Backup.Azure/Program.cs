@@ -8,23 +8,48 @@ namespace MSSQL.Backup.Azure
       [STAThread]
       static void Main(string[] args)
       {
-         if(args.Length == 1)
+         var storageItem = GetSavedAndInit();
+
+         if (args.Length == 1 && storageItem != null)
          {
-            var arg = args[0];
-
             // Entweder Voll- oder Log-Backup. Nie beides.
-            if(arg == "-database")
+            if(args[0] == "-database")
             {
+               SqlHelper.CreateBackupAndUpload(storageItem.Database);
             }
-            else if(arg == "-log")
+            else if(args[0] == "-log")
             {
-
+               SqlHelper.CreateBackupAndUpload(storageItem.Database, true);
             }
          }
          else
          {
             // Fenster wird nur erstellt, wenn keine oder ungültige Argumente angegeben wurden.
-            new Application().Run(new MainWindow());
+            new Application().Run(new MainWindow(storageItem));
+         }
+      }
+
+      /// <summary>
+      /// Sucht nach einer gespeicherten Datei mit Einstellungen und liest diese aus.
+      /// Bei einem Fehler wird null zurück gegeben.
+      /// </summary>
+      /// <returns></returns>
+      private static StorageItem GetSavedAndInit()
+      {
+         StorageItem item;
+
+         try
+         {
+            item = StorageItem.ReadFromFile();
+
+            SqlHelper.Init(item.SqlServer, item.SqlPassword);
+            SqlHelper.VerbindungEinrichten(item.AzureAccount, item.AzureContainer, item.SasToken);
+
+            return item;
+         }
+         catch(Exception)
+         {
+            return null;
          }
       }
    }

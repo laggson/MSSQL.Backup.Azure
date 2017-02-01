@@ -10,7 +10,7 @@ namespace MSSQL.Backup.Azure
    /// </summary>
    internal class StorageItem
    {
-      private static readonly string FilePath = 
+      private static readonly string FilePath =
          Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\Wichtig_NichtLoeschen.txt";
 
       /// <summary>
@@ -54,26 +54,38 @@ namespace MSSQL.Backup.Azure
       /// <param name="text">Der Text, der gespeichert wird</param>
       private void SaveFile(string text)
       {
-         if(File.Exists(FilePath))
+         if (File.Exists(FilePath))
             File.Delete(FilePath);
 
          File.WriteAllText(FilePath, text);
       }
 
       /// <summary>
-      /// Convertiert den Inhalt einer Textdatei in ein <see cref="StorageItem"/>.
+      /// Konvertiert den Inhalt einer Textdatei in ein <see cref="StorageItem"/> und 
+      /// löst eine Ausnahme aus, falls die Datei nicht gefunden wurde oder ihr Inhalt ungültig ist.
       /// </summary>
+      /// <exception cref="ArgumentException">Die Datei existiert nicht</exception>
+      /// <exception cref="InvalidDataException">Der Inhalt der Date ist ungültig.</exception>
       /// <returns>Das <see cref="StorageItem"/>, das ausgelesen wurde</returns>
       public static StorageItem ReadFromFile()
       {
-         if(!File.Exists(FilePath))
-            throw new ArgumentException("Niemand kann eine Datei lesen, die nicht existiert...", 
-               new IOException("Die Datei '" + FilePath +"' wurde nicht gefunden"));
+         if (!File.Exists(FilePath))
+            throw new IOException("Die Datei '" + FilePath + "' wurde nicht gefunden");
 
-         var text = File.ReadAllText(FilePath).FromBase64();
-         
-         // Vl JsonReaderException
-         return JsonConvert.DeserializeObject<StorageItem>(text);
+         StorageItem item;
+
+         try
+         {
+            var fileText = File.ReadAllText(FilePath);
+            var text = fileText.FromBase64();
+            item = JsonConvert.DeserializeObject<StorageItem>(text);
+
+            return item;
+         }
+         catch (Exception e) when (e is JsonReaderException || e is FormatException)
+         {
+            throw new InvalidDataException("Der Inhalt der gefundenen Datei ist ungültig.");
+         }
       }
    }
 }
