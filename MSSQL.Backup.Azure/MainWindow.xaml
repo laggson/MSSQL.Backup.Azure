@@ -33,7 +33,7 @@
                 <ColumnDefinition Width="70" />
             </Grid.ColumnDefinitions>
             <PasswordBox Margin="5" Password="Vivendi2016" Name="PbPassword" />
-            <Button Grid.Column="1" Content="Testen" Margin="5" Click="Button_Click" />
+            <Button Grid.Column="1" Content="Testen" Margin="5" Name="BtnCheckSql" Click="BtnCheckSql_OnClick" />
         </Grid>
         
         <Label Content="Datenbank" Grid.Row="2" />
@@ -62,8 +62,10 @@
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
             
-            <Button Margin="5" Width="100" Content="Wiederherstellen" HorizontalAlignment="Left" />
-            <Button Grid.Column="1" Margin="5" Width="100" HorizontalAlignment="Right" Content="Sichern" Click="Button_Click_1" />
+            <Button Margin="5" Width="100" Content="Wiederherstellen" HorizontalAlignment="Left" Name="BtnRestore"
+                    Click="BtnRestore_OnClick" />
+            <Button Grid.Column="1" Margin="5" Width="100" HorizontalAlignment="Right" Content="Sichern" 
+                    Name="BtnCreateJob" Click="BtnCreateJob_OnClick" />
         </Grid>
 
     </Grid>

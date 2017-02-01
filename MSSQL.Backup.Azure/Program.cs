@@ -1,31 +1,59 @@
 ﻿using System;
+using System.Data.SqlClient;
 using System.Windows;
 
 namespace MSSQL.Backup.Azure
 {
-   class Program
+   internal static class Program
    {
       [STAThread]
       static void Main(string[] args)
       {
+         if (args.Length > 0)
+            AktionsAuswahl(args[0]);
+      }
+
+      /// <summary>
+      /// Ruft anhand des angegebenen Arguments verschiedene Methoden auf und lässt eine Hinweisbox erscheinen, falls
+      /// ein Fehler abgefangen wurde. Bei keinen oder ungültigen Argumenten wird ein <see cref="MainWindow"/> erstellt.
+      /// </summary>
+      /// <param name="arg"></param>
+      private static void AktionsAuswahl(string arg)
+      {
+         bool hasExecuted = false;
          var storageItem = GetSavedAndInit();
 
-         if (args.Length == 1 && storageItem != null)
+         try
          {
             // Entweder Voll- oder Log-Backup. Nie beides.
-            if(args[0] == "-database")
+            if (arg == "-database" ^ arg == "-log")
             {
-               SqlHelper.CreateBackupAndUpload(storageItem.Database);
+               SqlHelper.CreateBackupAndUpload(storageItem.Database, arg == "-log");
+               hasExecuted = true;
+
             }
-            else if(args[0] == "-log")
+            else if (arg == "-restore")
             {
-               SqlHelper.CreateBackupAndUpload(storageItem.Database, true);
+               // TODO - hasExecuted nach Action
+               throw new NotImplementedException();
             }
+
+            if(hasExecuted)
+               MessageBox.Show("Die " + (arg == "-database" ? "Komplett" : "Verlaufs") + "-Sicherung der Datenbank '"
+                  + storageItem.Database + "' wurde erfolgreich abgeschlossen.", "SQL-Backup erfolgreich", 
+                  MessageBoxButton.OK, MessageBoxImage.Asterisk);
          }
-         else
+         catch (Exception e)
+         {
+            if (e is SqlException)
+               MessageBox.Show("Es ist ein Fehler aufgetreten. Weitere Informationen:\r\n"
+                               + e.Message, "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
+         }
+         finally
          {
             // Fenster wird nur erstellt, wenn keine oder ungültige Argumente angegeben wurden.
-            new Application().Run(new MainWindow(storageItem));
+            if(!hasExecuted)
+               new Application().Run(new MainWindow(storageItem));
          }
       }
 
@@ -36,18 +64,16 @@ namespace MSSQL.Backup.Azure
       /// <returns></returns>
       private static StorageItem GetSavedAndInit()
       {
-         StorageItem item;
-
          try
          {
-            item = StorageItem.ReadFromFile();
+            var item = StorageItem.ReadFromFile();
 
             SqlHelper.Init(item.SqlServer, item.SqlPassword);
             SqlHelper.VerbindungEinrichten(item.AzureAccount, item.AzureContainer, item.SasToken);
 
             return item;
          }
-         catch(Exception)
+         catch (Exception)
          {
             return null;
          }

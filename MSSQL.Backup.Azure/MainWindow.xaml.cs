@@ -10,40 +10,87 @@ namespace MSSQL.Backup.Azure
       internal MainWindow(StorageItem item)
       {
          InitializeComponent();
+         
+            ItemToView(item);
       }
 
-      private void Button_Click(object sender, RoutedEventArgs e)
+      /// <summary>
+      /// Ist <paramref name="item"/> nicht null, werden die Werte des Objekts in die Controls des Windows übernommen.
+      /// </summary>
+      /// <param name="item"></param>
+      private void ItemToView(StorageItem item)
+      {
+         if (item == null) return;
+
+         TbAccountName.Text  = item.AzureAccount;
+         TbContainer.Text    = item.AzureContainer;
+         TbServer.Text       = item.SqlServer;
+         TbToken.Text        = item.SasToken;
+         PbPassword.Password = item.SqlPassword;
+
+         TestSqlData();
+         CbDataTable.SelectedValue = item.Database;
+      }
+
+      /// <summary>
+      /// Erstellt ein <see cref="StorageItem"/> und speichert dieses in einer Textdatei.
+      /// </summary>
+      private void SavePreferencesAndCreateAgentJob()
+      {
+         var value = CbDataTable.SelectedValue as string;
+
+         var storageItem = new StorageItem
+         {
+            AzureAccount = TbAccountName.Text,
+            AzureContainer = TbContainer.Text,
+            Database = value,
+            SqlServer = TbServer.Text,
+            SqlPassword = PbPassword.Password,
+            SasToken = TbToken.Text
+         };
+
+         if (storageItem.IsValid())
+         {
+            storageItem.SaveAsJson();
+            SqlHelper.CreateAgentJobs();
+
+            MessageBox.Show(this, "Der Agent-Job wurde erfolgreich eingetragen.", "Erfolg",
+               MessageBoxButton.OK, MessageBoxImage.Asterisk);
+         }
+         else
+         {
+            MessageBox.Show(this, "Du musst zuerst eine Datenbank auswählen...",
+               "Ungültige Eingabe", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+         }
+      }
+
+      /// <summary>
+      /// Prüft, ob die angegebenen SQL-Server Anmeldedaten gültig sind.
+      /// </summary>
+      private void TestSqlData()
       {
          SqlHelper.Init(TbServer.Text, PbPassword.Password);
          CbDataTable.ItemsSource = SqlHelper.GetAllTables();
          CbDataTable.SelectedIndex = 0;
       }
 
-      private void Button_Click_1(object sender, RoutedEventArgs e)
+      #region Click-Events
+
+      private void BtnCheckSql_OnClick(object sender, RoutedEventArgs e)
       {
+         TestSqlData();
       }
 
-      private void SavePreferences()
+      private void BtnCreateJob_OnClick(object sender, RoutedEventArgs e)
       {
-         var value = CbDataTable.SelectedValue as string;
-
-         if (value == null)
-         {
-            MessageBox.Show(this, "Du musst zuerst eine Datenbank auswählen...");
-         }
-         else
-         {
-            var storageItem = new StorageItem
-            {
-               AzureAccount = TbAccountName.Text,
-               AzureContainer = TbContainer.Text,
-               Database = value,
-               SqlServer = TbServer.Text,
-               SqlPassword = PbPassword.Password,
-               SasToken = TbToken.Text
-            };
-            storageItem.SaveAsJson();
-         }
+         SavePreferencesAndCreateAgentJob();
       }
+
+      private void BtnRestore_OnClick(object sender, RoutedEventArgs e)
+      {
+         // TODO: Logik o_O
+      }
+
+      #endregion
    }
 }

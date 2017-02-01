@@ -3,8 +3,10 @@ using Microsoft.WindowsAzure.Storage.Auth;
 
 namespace MSSQL.Backup.Azure
 {
+   // ReSharper disable once UnusedMember.Global
    public class DeploymentHelper
    {
+      // ReSharper disable once NotAccessedField.Local
       private CloudStorageAccount _storageAccount;
 
       public DeploymentHelper(string sasToken)
@@ -17,15 +19,6 @@ namespace MSSQL.Backup.Azure
       {
          var credentials = new StorageCredentials(accountName, key);
          _storageAccount = new CloudStorageAccount(credentials, true);
-      }
-
-      public void UploadFile(string url, string containerName, string fileName)
-      {
-         var client = _storageAccount.CreateCloudBlobClient();
-         var container = client.GetContainerReference(containerName);
-
-         var reference = container.GetBlockBlobReference(fileName);
-         reference.UploadFromFile(fileName);
       }
    }
 }

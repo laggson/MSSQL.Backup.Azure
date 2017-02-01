@@ -6,13 +6,13 @@ using System.Windows;
 
 namespace MSSQL.Backup.Azure
 {
-   public class SqlHelper
+   public static class SqlHelper
    {
-      private static string _ConnectionString;
-      private static string _ContainerUrl;
+      private static string _connectionString;
+      private static string _containerUrl;
 
       #region Automatisierung
-      
+
       /// <summary>
       /// Überprürft die angegebenen Daten auf ihre Richtigkeit.
       /// Falls diese gültig sind, werden sie in der Klasse für den weiteren Gebrauch gespeichert.
@@ -34,7 +34,7 @@ namespace MSSQL.Backup.Azure
                return;
             }
             con.Close();
-            _ConnectionString = connStr;
+            _connectionString = connStr;
          }
       }
 
@@ -42,25 +42,23 @@ namespace MSSQL.Backup.Azure
       /// Weist den SQL-Server an, ein Backup der eingestellten Datenbank anzufertigen.
       /// </summary>
       /// <returns>Den Pfad, auf dem die Datei abgelegt wurde.</returns>
-      public static string CreateBackupAndUpload(string database, bool istLog = false, bool ueberschreiben = true)
+      public static void CreateBackupAndUpload(string database, bool istLog = false, bool ueberschreiben = true)
       {
          // Dateinamen zusammensetzen
-         string fileName = _ContainerUrl + "/" + GetFileName();
+         var fileName = _containerUrl + "/" + GetFileName(istLog);
 
-         string command = $"BACKUP "
+         var command = "BACKUP "
             + (istLog ? "LOG" : "DATABASE")
             + $" [{database}] TO URL='{fileName}' WITH COMPRESSION, "
             + (ueberschreiben ? "FORMAT" : "NOFORMAT");
 
          using (var cmd = new SqlCommand(command))
          {
-            cmd.Connection = new SqlConnection(_ConnectionString);
+            cmd.Connection = new SqlConnection(_connectionString);
             cmd.Connection.Open();
 
             cmd.ExecuteNonQuery();
             cmd.Connection.Close();
-
-            return fileName;
          }
       }
 
@@ -69,10 +67,10 @@ namespace MSSQL.Backup.Azure
       /// </summary>
       /// <param name="istLog"></param>
       /// <returns></returns>
-      public static string GetFileName(bool istLog = false)
+      private static string GetFileName(bool istLog = false)
       {
          string fileName = "CO_"
-                 + DateTimeFormatInfo.CurrentInfo.GetDayName(DateTime.Now.DayOfWeek);
+                 + DateTimeFormatInfo.CurrentInfo?.GetDayName(DateTime.Now.DayOfWeek);
 
          if (istLog)
             fileName += "_" + DateTime.Now.Hour.ToString("00");
@@ -89,17 +87,19 @@ namespace MSSQL.Backup.Azure
       /// <param name="sasToken">Das im Azure-Portal generierte Shared-Access-Token</param>
       public static void VerbindungEinrichten(string accName, string container, string sasToken)
       {
-         _ContainerUrl = $"https://{accName}.blob.core.windows.net/{container}";
+         _containerUrl = $"https://{accName}.blob.core.windows.net/{container}";
 
          string cmdString = "IF EXISTS "
-            + $"(SELECT * FROM sys.credentials WHERE name = '{_ContainerUrl}') "
-            + $"DROP CREDENTIAL [{_ContainerUrl}]";
+            + $"(SELECT * FROM sys.credentials WHERE name = '{_containerUrl}') "
+            + $"DROP CREDENTIAL [{_containerUrl}]";
 
          Execute(cmdString);
 
-         cmdString = $"CREATE CREDENTIAL [{_ContainerUrl}]"
-            + $"WITH IDENTITY='Shared Access Signature',"
+         cmdString = $"CREATE CREDENTIAL [{_containerUrl}]"
+            + "WITH IDENTITY=\'Shared Access Signature\',"
             + $"SECRET='{sasToken}'";
+
+         // TODO: Prüfen, ob SAS gültig. Sonst Exception schmeißen.
 
          Execute(cmdString);
       }
@@ -108,33 +108,26 @@ namespace MSSQL.Backup.Azure
       /// Führt den übergebenen Befehl auf dem SQL-Server aus und gibt die Anzahl der betroffenen Spalten zurück.
       /// </summary>
       /// <param name="command">Der SQL-Befehl</param>
-      /// <returns>Anzahl der betroffenen Zeilen</returns>
-      private static int Execute(string command)
+      private static void Execute(string command)
       {
-         int result;
-
          using (var cmd = new SqlCommand(command))
          {
-            cmd.Connection = new SqlConnection(_ConnectionString);
+            cmd.Connection = new SqlConnection(_connectionString);
             cmd.Connection.Open();
 
-            result = cmd.ExecuteNonQuery();
+            cmd.ExecuteNonQuery();
 
             cmd.Connection.Close();
          }
-
-         return result;
       }
 
       #endregion
 
-      #region Fuer Gui
+      #region Gui
 
       /// <summary>
-      /// Fragt alle bestehenden Datenbanken vom SQL-Server ab und gibt diese als <see cref="IEnumerable{string}"/> zurück.
+      /// Fragt alle bestehenden Datenbanken vom SQL-Server ab und gibt diese als <see cref="IEnumerable{T}"/> zurück.
       /// </summary>
-      /// <param name="serverName">Der Name, bzw. die IP des SQL-Servers</param>
-      /// <param name="password">Das Passwort, das für den Benutzer 'sa' verwendet wird.</param>
       /// <returns></returns>
       public static IEnumerable<string> GetAllTables()
       {
@@ -144,7 +137,7 @@ namespace MSSQL.Backup.Azure
          {
             try
             {
-               cmd.Connection = new SqlConnection(_ConnectionString);
+               cmd.Connection = new SqlConnection(_connectionString);
                cmd.Connection.Open();
             }
             catch (SqlException e)
@@ -173,6 +166,44 @@ namespace MSSQL.Backup.Azure
          }
 
          return data;
+      }
+
+      /// <summary>
+      /// Erstellt die Jobs im SQL-ServerAgent, die das Programm in regelmäßigen Abständen ausführen.
+      /// </summary>
+      public static void CreateAgentJobs()
+      {
+         var commands = new[]
+         {
+            "USE msdb;",
+
+            "IF EXISTS(select name from msdb.dbo.sysjobs_view WHERE name='Azure_Log') "
+            + "EXEC sp_delete_job @job_name='Azure_Log'",
+
+            "DECLARE @jobId BINARY(16) EXEC sp_add_job @job_name='Azure_Log', "
+            + "@category_name=N'Database Maintenance', @job_id = @jobId OUTPUT",
+
+            "EXEC sp_add_jobstep @step_name='Backup', @job_id=@jobId, @subsystem=N'CmdExec', " 
+            + "@command=N'" + AppDomain.CurrentDomain.BaseDirectory // TODO: DB oder Log
+            + "SQLBackup.exe'",
+
+            "EXEC sp_add_jobschedule @job_id=@jobId, @name='Test', @freq_type=4, " 
+            + "@freq_interval=1, @freq_subday_type=0x8, @freq_subday_interval=4",
+
+            "EXEC sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'"
+         };
+
+         using (var cmd = new SqlCommand(string.Join(" ", commands)))
+         {
+            cmd.Connection = new SqlConnection(_connectionString);
+            cmd.Connection.Open();
+
+            cmd.ExecuteNonQuery();
+
+            cmd.Connection.Close();
+         }
+
+         // Am Ende vom Job Prüfen, ob alles geklappt hat.
       }
 
       #endregion

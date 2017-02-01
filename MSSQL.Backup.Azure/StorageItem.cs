@@ -49,6 +49,20 @@ namespace MSSQL.Backup.Azure
       }
 
       /// <summary>
+      /// Prüft, ob in allen Feldern des Objekts gültige Werte eingetragen sind.
+      /// </summary>
+      /// <returns></returns>
+      public bool IsValid()
+      {
+         return !string.IsNullOrEmpty(SqlPassword)
+                && !string.IsNullOrEmpty(SqlServer)
+                && !string.IsNullOrEmpty(Database)
+                && !string.IsNullOrEmpty(AzureAccount)
+                && !string.IsNullOrEmpty(AzureContainer)
+                && !string.IsNullOrEmpty(SasToken);
+      }
+
+      /// <summary>
       /// Speichert den eingegebenen Text in einer Datei in LocalAppdata
       /// </summary>
       /// <param name="text">Der Text, der gespeichert wird</param>
