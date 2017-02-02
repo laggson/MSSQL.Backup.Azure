@@ -3,18 +3,20 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MSSQL.Backup.Azure"
         mc:Ignorable="d" ResizeMode="CanMinimize" x:ClassModifier="internal"
-        Title="SQL-Sicherung in die Azure Cloud" Height="240" Width="450">
+        Title="SQL-Sicherung in die Azure Cloud" Height="357" Width="500" Closing="MainWindow_OnClosing">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="30" />
             <RowDefinition Height="30" />
-            <RowDefinition Height="30" />
+            <RowDefinition Height="32" />
             <RowDefinition Height="20" />
             <RowDefinition Height="30" />
+            <RowDefinition Height="60" />
             <RowDefinition Height="30" />
             <RowDefinition Height="30" />
+            <RowDefinition Height="20" />
+            <RowDefinition Height="32" />
             <RowDefinition />
         </Grid.RowDefinitions>
         
@@ -24,48 +26,66 @@
         </Grid.ColumnDefinitions>
 
         <Label Content="SQL-Server" VerticalAlignment="Center" />
-        <TextBox Grid.Column="1" Margin="5" Text="W9900649" Name="TbServer" />
+        <TextBox Grid.Row="0" Grid.Column="1" Margin="5" Name="TbServer" />
         
-        <Label Grid.Row="1" Content="sa-Kennwort" VerticalAlignment="Center" />
+        <Label Grid.Row="1" Grid.Column="0" Content="sa-Kennwort" VerticalAlignment="Center" />
         <Grid Grid.Row="1" Grid.Column="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
                 <ColumnDefinition Width="70" />
             </Grid.ColumnDefinitions>
-            <PasswordBox Margin="5" Password="Vivendi2016" Name="PbPassword" />
-            <Button Grid.Column="1" Content="Testen" Margin="5" Name="BtnCheckSql" Click="BtnCheckSql_OnClick" />
+            <PasswordBox Margin="5" Name="PbPassword" />
+            <Button Grid.Column="1" Content="Testen" Margin="5" Click="BtnCheckSql_OnClick" />
         </Grid>
         
-        <Label Content="Datenbank" Grid.Row="2" />
+        <Label Content="Datenbank" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" />
         <ComboBox Name="CbDataTable" Margin="5" Grid.Row="2" Grid.Column="1" />
-        <Separator Grid.Row="3" Grid.ColumnSpan="3" />
+        <Separator Grid.Row="3" Grid.ColumnSpan="2" Grid.Column="0" />
         
-        <Label Grid.Row="4" Content="Azure-Server" VerticalAlignment="Center" />
+        <Label Grid.Row="4" Grid.Column="0" Content="Azure-Server" VerticalAlignment="Center" />
         <Grid Grid.Row="4" Grid.Column="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="100" />
-                <ColumnDefinition Width="135" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="137" />
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
 
-            <TextBox Margin="5 5 0 5" Text="cxdb" TextAlignment="Right" Name="TbAccountName" />
+            <TextBox Margin="5 5 0 5" TextAlignment="Right" Name="TbAccountName" />
             <Label Grid.Column="1" Content=".blob.core.windows.net/" VerticalAlignment="Center" />
-            <TextBox Grid.Column="2" Margin="0 5 5 5" Text="main" Name="TbContainer" />
+            <TextBox Grid.Column="2" Margin="0 5 5 5" Name="TbContainer" />
         </Grid>
         
-        <Label Grid.Row="5" VerticalAlignment="Center" Content="Schlüssel" />
-        <TextBox Grid.Row="5" Grid.Column="1" Margin="5" Name="TbToken" />
+        <Label Grid.Row="5" Grid.Column="0" Margin="0 5 0 0" Content="Schlüssel" />
+        <TextBox Grid.Row="5" Grid.Column="1" Margin="5" Name="TbToken" TextWrapping="Wrap" />
 
-        <Grid Grid.Row="6" Grid.Column="1">
+        <Label Grid.Row="6" Grid.Column="0" Content="Schlüssel" VerticalAlignment="Center" />
+        <TextBox Grid.Row="6" Grid.Column="1" Margin="5" Name="TbKey" />
+        
+        <Grid Grid.Row="7" Grid.Column="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition />
-                <ColumnDefinition />
+                <ColumnDefinition Width="150" />
+                <ColumnDefinition Width="110" />
             </Grid.ColumnDefinitions>
             
-            <Button Margin="5" Width="100" Content="Wiederherstellen" HorizontalAlignment="Left" Name="BtnRestore"
+            <Button Grid.Column="2" Margin="5" Width="100" HorizontalAlignment="Right" Content="Job eintragen" 
+                    Click="BtnCreateJob_OnClick" />
+            
+        </Grid>
+        
+        <Separator Grid.Row="8" Grid.ColumnSpan="2" Grid.Column="0" />
+        
+        <Grid Grid.Row="9" Grid.Column="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="120" />
+                <ColumnDefinition />
+                <ColumnDefinition Width="110" />
+            </Grid.ColumnDefinitions>
+            
+            <ComboBox Margin="5" Name="CbWochentage" />
+            <TextBox x:Name="TbRestoreName" Grid.Column="1" Margin="5" />
+            <Button Margin="5" Grid.Column="2" Width="100" Content="Wiederherstellen" HorizontalAlignment="Left"
                     Click="BtnRestore_OnClick" />
-            <Button Grid.Column="1" Margin="5" Width="100" HorizontalAlignment="Right" Content="Sichern" 
-                    Name="BtnCreateJob" Click="BtnCreateJob_OnClick" />
         </Grid>
 
     </Grid>

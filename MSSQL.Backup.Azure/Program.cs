@@ -9,8 +9,7 @@ namespace MSSQL.Backup.Azure
       [STAThread]
       static void Main(string[] args)
       {
-         if (args.Length > 0)
-            AktionsAuswahl(args[0]);
+         AktionsAuswahl(args.Length > 0 ? args[0] : "");
       }
 
       /// <summary>
@@ -38,21 +37,19 @@ namespace MSSQL.Backup.Azure
                throw new NotImplementedException();
             }
 
-            if(hasExecuted)
+            if (hasExecuted)
                MessageBox.Show("Die " + (arg == "-database" ? "Komplett" : "Verlaufs") + "-Sicherung der Datenbank '"
-                  + storageItem.Database + "' wurde erfolgreich abgeschlossen.", "SQL-Backup erfolgreich", 
+                               + storageItem.Database + "' wurde erfolgreich abgeschlossen.", "SQL-Backup erfolgreich",
                   MessageBoxButton.OK, MessageBoxImage.Asterisk);
          }
-         catch (Exception e)
+         catch (SqlException e)
          {
-            if (e is SqlException)
                MessageBox.Show("Es ist ein Fehler aufgetreten. Weitere Informationen:\r\n"
                                + e.Message, "Fehler", MessageBoxButton.OK, MessageBoxImage.Error);
          }
          finally
          {
-            // Fenster wird nur erstellt, wenn keine oder ungültige Argumente angegeben wurden.
-            if(!hasExecuted)
+            if (!hasExecuted)
                new Application().Run(new MainWindow(storageItem));
          }
       }

@@ -34,6 +34,10 @@ namespace MSSQL.Backup.Azure
       /// </summary>
       public string AzureContainer { get; set; }
       /// <summary>
+      /// Der Zugriffsschlüssel, der im Azure-Portal generiert wird.
+      /// </summary>
+      public string AzureKey { get; set; }
+      /// <summary>
       /// Das Zugriffs-Token, generiert im Azure-Portal
       /// </summary>
       public string SasToken { get; set; }
@@ -59,7 +63,13 @@ namespace MSSQL.Backup.Azure
                 && !string.IsNullOrEmpty(Database)
                 && !string.IsNullOrEmpty(AzureAccount)
                 && !string.IsNullOrEmpty(AzureContainer)
+                && !string.IsNullOrEmpty(AzureKey)
                 && !string.IsNullOrEmpty(SasToken);
+      }
+
+      public override string ToString()
+      {
+         return AzureAccount + ".blob.core.windows.net/" + AzureContainer;
       }
 
       /// <summary>
@@ -86,13 +96,11 @@ namespace MSSQL.Backup.Azure
          if (!File.Exists(FilePath))
             throw new IOException("Die Datei '" + FilePath + "' wurde nicht gefunden");
 
-         StorageItem item;
-
          try
          {
             var fileText = File.ReadAllText(FilePath);
             var text = fileText.FromBase64();
-            item = JsonConvert.DeserializeObject<StorageItem>(text);
+            var item = JsonConvert.DeserializeObject<StorageItem>(text);
 
             return item;
          }

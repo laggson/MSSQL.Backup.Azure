@@ -168,30 +168,87 @@ namespace MSSQL.Backup.Azure
          return data;
       }
 
+      public static void Rollback(string database, string[] files)
+      {
+         var last = files[files.Length -1];
+         var command = "";
+
+         foreach (var file in files)
+         {
+            var path = _containerUrl + "/" + file;
+            var current = "RESTORE DATABASE " + database + " FROM URL ='" + path
+               + "' WITH NORECOVERY;";
+
+            if (file == last)
+               current = current.Replace("NORECOVERY", "RECOVERY");
+
+            command += " " + current;
+         }
+
+         TryDropDatabase(database);
+         
+         using (var cmd = new SqlCommand(command))
+         {
+            cmd.CommandTimeout = 3600;
+            cmd.Connection = new SqlConnection(_connectionString);
+            cmd.Connection.Open();
+
+            cmd.ExecuteNonQuery();
+            cmd.Connection.Close();
+         }
+      }
+
+      private static void TryDropDatabase(string database)
+      {
+         try
+         {
+            Execute($"USE master; ALTER DATABASE {database} SET SINGLE_USER WITH ROLLBACK IMMEDIATE;");
+         }
+         catch
+         {
+            // ignored 
+         }
+         try
+         {
+            Execute($"DROP DATABASE {database}");
+         }
+         catch (SqlException)
+         {
+         }
+      }
+
       /// <summary>
       /// Erstellt die Jobs im SQL-ServerAgent, die das Programm in regelmäßigen Abständen ausführen.
       /// </summary>
-      public static void CreateAgentJobs()
+      public static void CreateAgentJobs(bool istLog = false)
       {
-         var commands = new[]
+         var jobName = istLog ? "Azure_Log" : "Azure_Backup";
+
+         var commands = new List<string>
          {
             "USE msdb;",
 
-            "IF EXISTS(select name from msdb.dbo.sysjobs_view WHERE name='Azure_Log') "
-            + "EXEC sp_delete_job @job_name='Azure_Log'",
+            $"IF EXISTS(select name from msdb.dbo.sysjobs_view WHERE name='{jobName}') "
+            + $"EXEC sp_delete_job @job_name='{jobName}'",
 
-            "DECLARE @jobId BINARY(16) EXEC sp_add_job @job_name='Azure_Log', "
+            $"DECLARE @jobId BINARY(16) EXEC sp_add_job @job_name='{jobName}', "
             + "@category_name=N'Database Maintenance', @job_id = @jobId OUTPUT",
 
             "EXEC sp_add_jobstep @step_name='Backup', @job_id=@jobId, @subsystem=N'CmdExec', " 
-            + "@command=N'" + AppDomain.CurrentDomain.BaseDirectory // TODO: DB oder Log
-            + "SQLBackup.exe'",
-
-            "EXEC sp_add_jobschedule @job_id=@jobId, @name='Test', @freq_type=4, " 
-            + "@freq_interval=1, @freq_subday_type=0x8, @freq_subday_interval=4",
-
+            + "@command=N'" + AppDomain.CurrentDomain.BaseDirectory
+            + "SQLBackup.exe " + (istLog ? "-log" : "-database") + "'",
+            
             "EXEC sp_add_jobserver @job_id = @jobId, @server_name = N'(local)'"
          };
+
+         string schedule = istLog
+            ? "EXEC sp_add_jobschedule @job_id=@jobId, @name='Alle 4 Stunden', @freq_type=4, "
+               + "@freq_interval=1, @freq_subday_type=0x8, @freq_subday_interval=4"
+
+            : "EXEC sp_add_jobschedule @job_id=@jobId, @name='Einmal täglich', @freq_type=4, "
+               + "@freq_interval=1";
+
+         commands.Insert(commands.Count -1, schedule);
 
          using (var cmd = new SqlCommand(string.Join(" ", commands)))
          {
