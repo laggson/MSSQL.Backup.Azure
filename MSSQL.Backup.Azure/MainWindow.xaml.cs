@@ -25,6 +25,8 @@ namespace MSSQL.Backup.Azure
 
          ItemToView(item);
       }
+      
+      // NEUES TOKEN: Key 2, ab 14:34: sv=2015-12-11&ss=b&srt=c&sp=rwac&se=2018-02-02T22:32:07Z&st=2017-02-02T13:34:07Z&spr=https&sig=gX7%2BuOASt4PpB1kfSe%2BvBOKtjh7WEbQHODfLZfw2tLw%3D
 
       /// <summary>
       /// Gibt anhand der Kultur und des Wochenanfangs eine Liste mit lokalisierten Namen der Wochentage zurück
