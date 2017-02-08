@@ -45,7 +45,7 @@ namespace MSSQL.Backup.Azure
       public static void CreateBackupAndUpload(string database, bool istLog = false, bool ueberschreiben = true)
       {
          // Dateinamen zusammensetzen
-         var fileName = _containerUrl + "/" + GetFileName(istLog);
+         var fileName = _containerUrl + "/" + GetFileName(database, istLog);
 
          var command = "BACKUP "
             + (istLog ? "LOG" : "DATABASE")
@@ -67,14 +67,13 @@ namespace MSSQL.Backup.Azure
       /// </summary>
       /// <param name="istLog"></param>
       /// <returns></returns>
-      private static string GetFileName(bool istLog = false)
+      private static string GetFileName(string databaseName, bool istLog = false)
       {
-         string fileName = "CO_"
+         string fileName = "CO_" + databaseName + "_"
                  + DateTimeFormatInfo.CurrentInfo?.GetDayName(DateTime.Now.DayOfWeek);
 
          if (istLog)
             fileName += "_" + DateTime.Now.Hour.ToString("00");
-         // + DateTime.Now.Minute.ToString("00");
 
          return fileName + ".bak";
       }
